@@ -1,4 +1,5 @@
 A simple project that when ran, finds a random manga and opens a random page from that manga in your browser.
+
 **Learning Objectives:**
 - Lightly introduce myself to interacting with APIs
 - Learn more fundamental C++ syntax
