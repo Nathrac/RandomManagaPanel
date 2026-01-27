@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include "json.hpp"
+#include <windows.h>
 
 using namespace std;
 using json = nlohmann::json;
@@ -43,9 +44,31 @@ int main(){
     // Get random array index, and get the id for that index's chapter
     size_t random_index = rand() % chapter_array.size();
     string chapter_id = chapter_array[random_index]["id"];
+
+    // Get json return for all pages from a chapter id
+    auto page_result = client.Get("/at-home/server/" + chapter_id);
+    json pages = json::parse(page_result->body);
+    // Store chapter hash value for later to get image
+    string chapter_hash = pages["chapter"]["hash"];
+    // Store only the array of page ids
+    json page_array = pages["chapter"]["data"];
+
+    // Get random array index and store the value of that index
+    size_t random_ind = rand() % page_array.size(); //rename later when put in own function
+    string page_id = page_array[random_ind]; 
     
-    cout << chapters_result->body << endl;
-    cout << chapter_id << endl;
+    string base_page_url = "https://uploads.mangadex.org/data/";
+    httplib::Client page_client(base_page_url);
+
+    string image = base_page_url + chapter_hash + "/" + page_id;
+    // auto page_image = client.Get(chapter_hash + "/" + page_id);
+    
+    ShellExecuteA(NULL, "open", image.c_str(), NULL, NULL, SW_SHOWMAXIMIZED);
+
+    
+    cout << image << "\n" << endl;
+    cout << chapter_hash << endl;
+    // cout << page_image << endl;
     
 
     return 0;
