@@ -14,19 +14,24 @@ string GetMangaId(httplib::Client& client);
 string GetChapterId(httplib::Client& client, const string& manga_id);
 string GetPage(httplib::Client& client, const string& chapter_id);
 
-// TODO: Handle condition if there is no chapters available
-// TODO: Handle condition if there is no pages available
-
 int main(){
     string base_url = "https://api.mangadex.dev";
     httplib::Client client(base_url);
-    // Get Random Manga
-    string manga_id = GetMangaId(client); 
+    string image = "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwallpapers.com%2Fimages%2Fhd%2Frick-astley-th6vqytajjixfuqj.jpg&f=1&nofb=1&ipt=b7eaf9290aa2652e22b596442f7cf4648ecf5d4facc5df411b5940942b1bec0b";
 
-    // Get Manga's ChapterID
-    string chapter_id = GetChapterId(client, manga_id);
-
-    string image = GetPage(client, chapter_id);
+    do {
+        // Get Random Manga
+        string manga_id = GetMangaId(client); 
+        // Get Manga's ChapterID
+        string chapter_id = GetChapterId(client, manga_id);
+        if (chapter_id == ""){
+            // Reminder to self: continue will restart the loop from the top if hit. I.e. if continue is hit here, image = GetPage wont run and the code jumps back to GetManga.
+            continue;
+        }
+        image = GetPage(client, chapter_id);
+        break;
+    }
+    while(true);
     
     ShellExecuteA(NULL, "open", image.c_str(), NULL, NULL, SW_SHOWMAXIMIZED);
 
@@ -41,8 +46,7 @@ string GetMangaId(httplib::Client& client){
 
     // Parse manga to json, then find and store manga 'id'
     json manga = json::parse(manga_result->body);
-    //testing 
-    cout << manga["data"]["id"] << endl;
+
     return manga["data"]["id"];
 }
 
@@ -54,13 +58,11 @@ string GetChapterId(httplib::Client& client, const string& manga_id){
     json chapter_array = chapters["data"];
     // BREAK POINT: IF ARRAY IS EMPTY PROGRAM WONT CONTINUE, THUS NEW MANGA NEEDS TO BE SEARCHED FOR.
     if (chapter_array.empty()){
-        cout << "this bitch empty";
+        return "";
     }
     
     size_t random_index = rand() % chapter_array.size();
 
-    // Testing
-    cout << chapter_array[random_index]["id"] << endl;
     return chapter_array[random_index]["id"];
 }
 
@@ -80,7 +82,5 @@ string GetPage(httplib::Client& client, const string& chapter_id){
     string base_page_url = "https://uploads.mangadex.org/data/";
     // httplib::Client page_client(base_page_url);
 
-    //testing
-    cout << base_page_url + chapter_hash + "/" + page_id << endl;
     return base_page_url + chapter_hash + "/" + page_id;
 }
