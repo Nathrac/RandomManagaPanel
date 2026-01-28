@@ -9,42 +9,62 @@
 using namespace std;
 using json = nlohmann::json;
 
-//Find how it sets/stores manga and subsequently manga pages
-//How to store/save that image
-//FInd out how to interact with other apps on device with c++
-//How to open saved image with desired app
+// Note to self: the '&' symbol is a reference to the client that we initialize in main since httplib::Client is not something we can directly store in a variable. 
+string GetMangaId(httplib::Client& client);
+string GetChapterId(httplib::Client& client, const string& manga_id);
+string GetPage(httplib::Client& client, const string& chapter_id);
 
-// TODO: Create a function to Get Chapters, then a function to Get Pages. 
-// TODO: Implement error handling
-// TODO: If chapter array is empty/null, run GetChapters again. 
+// TODO: Handle condition if there is no chapters available
+// TODO: Handle condition if there is no pages available
 
 int main(){
-    
     string base_url = "https://api.mangadex.dev";
+    httplib::Client client(base_url);
+    // Get Random Manga
+    string manga_id = GetMangaId(client); 
+
+    // Get Manga's ChapterID
+    string chapter_id = GetChapterId(client, manga_id);
+
+    string image = GetPage(client, chapter_id);
+    
+    ShellExecuteA(NULL, "open", image.c_str(), NULL, NULL, SW_SHOWMAXIMIZED);
+
+    return 0;
+}
+
+string GetMangaId(httplib::Client& client){
     string url_extension = "/manga/random";
 
     // Get random manga from mangadex api
-    httplib::Client client(base_url);
     auto manga_result = client.Get(url_extension);
-
-    // Error handling for manga request
 
     // Parse manga to json, then find and store manga 'id'
     json manga = json::parse(manga_result->body);
-    string manga_id = manga["data"]["id"];
+    //testing 
+    cout << manga["data"]["id"] << endl;
+    return manga["data"]["id"];
+}
 
-    // Create chapter endstring to 
+string GetChapterId(httplib::Client& client, const string& manga_id){
     string chapter_url = "/manga/" + manga_id + "/feed";
 
-    // Get list of chapters for manga id
     auto chapters_result = client.Get(chapter_url);
     json chapters = json::parse(chapters_result->body);
     json chapter_array = chapters["data"];
-
-    // Get random array index, and get the id for that index's chapter
+    // BREAK POINT: IF ARRAY IS EMPTY PROGRAM WONT CONTINUE, THUS NEW MANGA NEEDS TO BE SEARCHED FOR.
+    if (chapter_array.empty()){
+        cout << "this bitch empty";
+    }
+    
     size_t random_index = rand() % chapter_array.size();
-    string chapter_id = chapter_array[random_index]["id"];
 
+    // Testing
+    cout << chapter_array[random_index]["id"] << endl;
+    return chapter_array[random_index]["id"];
+}
+
+string GetPage(httplib::Client& client, const string& chapter_id){
     // Get json return for all pages from a chapter id
     auto page_result = client.Get("/at-home/server/" + chapter_id);
     json pages = json::parse(page_result->body);
@@ -58,18 +78,9 @@ int main(){
     string page_id = page_array[random_ind]; 
     
     string base_page_url = "https://uploads.mangadex.org/data/";
-    httplib::Client page_client(base_page_url);
+    // httplib::Client page_client(base_page_url);
 
-    string image = base_page_url + chapter_hash + "/" + page_id;
-    // auto page_image = client.Get(chapter_hash + "/" + page_id);
-    
-    ShellExecuteA(NULL, "open", image.c_str(), NULL, NULL, SW_SHOWMAXIMIZED);
-
-    
-    cout << image << "\n" << endl;
-    cout << chapter_hash << endl;
-    // cout << page_image << endl;
-    
-
-    return 0;
+    //testing
+    cout << base_page_url + chapter_hash + "/" + page_id << endl;
+    return base_page_url + chapter_hash + "/" + page_id;
 }
